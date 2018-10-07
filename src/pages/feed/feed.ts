@@ -32,6 +32,8 @@ export class FeedPage {
   public loader;
   public refresher;
   public isRefreshing: boolean = false;
+  public page = 1;
+  public infiniteScroll;
 
   constructor(
     public navCtrl: NavController, 
@@ -61,13 +63,26 @@ export class FeedPage {
     this.loadMovies();
   }
 
-  loadMovies(){
+  doInfinite(infiniteScroll) {   
+    this.page++;
+    this.infiniteScroll = infiniteScroll;
+    this.loadMovies(true);
+  }
+
+  loadMovies(newPage:boolean = false){
     this.presentLoading();
-    this.movieProvider.getPopularMovies().subscribe(
+    this.movieProvider.getLatestMovies(this.page).subscribe(
       data => {                
         const response = (data as any);        
         const objeto = JSON.parse(response._body);
-        this.lista_filmes = objeto.results;        
+        
+        if(newPage){
+          this.lista_filmes = this.lista_filmes.concat(objeto.results);        
+          this.infiniteScroll.complete();
+        } else {
+          this.lista_filmes = objeto.results;
+        }       
+        
         this.closeLoading();
         if(this.isRefreshing){
           this.refresher.complete();
@@ -87,7 +102,7 @@ export class FeedPage {
 
   openDetail(filme){
     this.navCtrl.push(MovieDetailPage, { id: filme.id });
-  }
+  }  
 
   ionViewDidEnter() { 
     this.loadMovies();
